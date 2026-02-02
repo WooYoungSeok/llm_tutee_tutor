@@ -1,0 +1,99 @@
+import re
+import numpy as np
+from tqdm import tqdm
+import json
+
+# Constants (you might want to import these from a common config file)
+SCORES = {
+    "A": 2, "B": 1
+}
+
+SCORES_BACK = {
+    2: 'Accurate',
+    1: 'Inaccurate',
+    0: 'Unknown'
+}
+
+def calc_mean_and_var(result):
+    """
+    Calculate mean and variance of results.
+    """
+    mean = {}
+    std = {}
+    for key, item in result.items():
+        mean[key] = np.mean(np.array(item))
+        std[key] = np.std(np.array(item))
+
+    return {
+        "mean": list(sorted(mean.items(), key=lambda item: item[0])),
+        "std": list(sorted(std.items(), key=lambda item: item[0])),
+    }
+
+
+
+def process_answers(answers,sample):
+    """
+    Process answers and calculate results.
+    """
+
+    global_result = {'se': [], 'im': [], 'as': []}
+    global_cnt = {"A": 0, "B": 0, "UNK": 0}
+    global_result_abs = {'se': [], 'im': [], 'as': []}
+    answer_number = 0
+    for item in sample['test']:
+        label = item["label_trait"]
+        key = item["key"]
+        parsed_result = re.search(r"[abAB][^a-zA-Z]", answers[answer_number][:12], flags=0)
+        if parsed_result:
+            parsed_result = parsed_result.group()[0].upper()
+            score = abs(SCORES[parsed_result] - item['value'])
+            global_cnt[parsed_result] += 1
+            global_result_abs[label].append(score)
+            score = SCORES[parsed_result]
+            if key == 1:
+                global_result[label].append(score)
+            else:
+                global_result[label].append(3 - score)
+        else:
+            global_cnt["UNK"] += 1
+        answer_number += 1
+
+    mean_var = calc_mean_and_var(global_result)
+    mean_var_abs = calc_mean_and_var(global_result_abs)
+    result_file = {
+        'case': sample['test'][0]['case'],
+        'result': global_result,
+        'count': global_cnt,
+        'mean_ver': mean_var,
+        'mean_ver_abs': mean_var_abs
+    }
+
+    return result_file
+
+
+def process_few_shot(data, model, tokenizer, model_file, template):
+    """
+    Process data using few-shot learning method.
+    """
+    results = []
+    for i in tqdm(data):
+        system_prompt_text = 'Here are some of your behaviors and your level of recognition towards them' + \
+                             ';'.join([f"{it['text']}:{SCORES_BACK[it['value']]}" for it in i['train']])
+        answers = generate_answer(tokenizer, model, data[0]['test'], template, scores=SCORES,
+                                  system_prompt=system_prompt_text, model_file=model_file)
+        results.extend(process_answers([i], answers))
+    return results
+
+
+def process_personality_prompt(data, model, tokenizer, model_file):
+    """
+    Process data using personality prompts method.
+    """
+    system_prompt = json.load(open('PAPI/personality_prompt'))
+    results = []
+    for index, i in enumerate(tqdm(data)):
+        system_prompt_text = system_prompt[index]['output'][0]
+        answers = generateAnswer(tokenizer, model, data[0]['test'], TEMPLATE, system_prompt=system_prompt_text,
+                                 model_file=model_file)
+        results.extend(process_answers([i], answers))
+    return results
