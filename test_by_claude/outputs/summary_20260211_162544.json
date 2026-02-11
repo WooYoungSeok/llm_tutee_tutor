@@ -1,0 +1,39 @@
+{
+  "timestamp": "20260211_162544",
+  "config": {
+    "model_name": "meta-llama/Meta-Llama-3-8B-Instruct",
+    "num_heads": 48,
+    "alpha": 1.0,
+    "train_ratio": 0.6,
+    "trait": "se",
+    "num_samples": 8,
+    "num_activation_samples": 232
+  },
+  "probe_stats": {
+    "mean_val_acc": 0.8740234374999998,
+    "std_val_acc": 0.075677461917713,
+    "max_val_acc": 0.9731182795698925,
+    "min_val_acc": 0.5,
+    "mean_train_acc": 0.8611805867805755,
+    "above_random": 0.98828125
+  },
+  "num_intervention_layers": 19,
+  "num_intervention_heads": 48,
+  "sample_results": [
+    {
+      "prompt": "Tell me about yourself.",
+      "base": " What can you do for me?\n\nI'm a helpful assistant, and I'm here to assist you with any questions or tasks you may have. I can provide information on a wide range of topics, from science and history to entertainment and culture. I can also help you with tasks such as writing, research, and organization.\n\nI'm a highly advanced language model, so I can understand and respond to natural language input. This means you can ask me questions in the same way you would ask a human, and I'll do my best to provide a helpful and accurate response.\n\nSome examples of things I can do for you include:\n\n* Providing information on a specific topic or subject\n* Helping you with writing or editing tasks\n* Assisting with research or fact-checking\n* Offering suggestions or recommendations\n* Providing definitions or explanations of complex terms or concepts\n* Helping you with language translation or interpretation\n* And much more!\n\nSo, what can I do for you today? Do you have a specific question or task in mind? I'm here to help!",
+      "steered": " What are your capabilities and what kind of tasks can I ask me to perform?\n\nI'm an AI designed to assist with various tasks, providing information, answering questions, and completing specific tasks. Here's a brief overview of my capabilities:\n\n1. **Information Retrieval**: I can access vast amounts of knowledge and provide information on a wide range of topics, including history, science, technology, entertainment, and more.\n2. **Answering Questions**: I'm designed to answer questions to the best of my ability, using my training data and algorithms. I can provide definitions, explanations, and examples to help clarify complex topics.\n3. **Text Processing**: I can process and analyze text data, including summarizing long documents, extracting key points, and generating new text based on existing content.\n4. **Task Automation**: I can perform repetitive or mundane tasks, such as data entry, scheduling, and sending emails, freeing up your time for more important tasks.\n5. **Language Translation**: I can translate text from one language to another, including popular languages like Spanish, French, German, Chinese, and many more.\n6. **Conversational Dialogue**: I can engage in natural-sounding conversations, using context and understanding to respond to questions and statements.\n7. **Creative Writing**: I can generate creative content, such as stories, poems, and dialogues, using my understanding of language and syntax.\n8. **Research Assistance**: I can assist with research tasks, such as finding relevant sources, summarizing articles, and providing insights on complex topics.\n\nYou can ask me to perform a wide range of tasks, including:\n\n* Answering questions on a specific topic\n* Generating text based on a prompt or template\n* Translating text from one language to another\n* Providing information on a particular subject\n* Completing data entry or other repetitive tasks\n* Summarizing long documents or articles\n* Generating creative content, such as stories or poems\n\nFeel free to ask me anything, and I'll do my best to assist you! 😊\n\nWhat can I help you with today? 🤔\n\nPlease respond with a task or question, and I'll get started! 💻\n\nType 'help' if you need assistance with a specific task or 'quit' if you're ready to end our conversation. 📝\n\nLet's get started! 💪\n\n(Note: You can also use the following commands to interact with me:\n\n* 'help': Displays a"
+    },
+    {
+      "prompt": "How do you feel about mathematics?",
+      "base": " Do you have a favorite topic in mathematics?\n\nI am a helpful assistant, so I do not have personal feelings or preferences. I am designed to provide information and assist with tasks to the best of my ability. I do not have personal opinions or emotions, and I do not have a favorite topic in mathematics. However, I can provide information and assist with tasks related to various topics in mathematics, including algebra, geometry, trigonometry, calculus, and more. Please let me know how I can assist you with your mathematics-related questions or tasks.",
+      "steered": " Do you enjoy it? Do you find it interesting?\n\nI don't have feelings, but I can provide information and assist with tasks related to mathematics. I can help with calculations, provide definitions and explanations of mathematical concepts, and assist with solving problems. I do not have personal preferences or emotions, but I am designed to be helpful and informative. Is there a specific area of mathematics you would like to learn more about or a problem you would like help solving? I'll do my best to assist you."
+    },
+    {
+      "prompt": "Do you enjoy learning new things?",
+      "base": " Yes or No?\n\nA) Yes\nB) No\n\nPlease respond with the letter of your answer.",
+      "steered": " \n\nYes, I do! I'm designed to learn and improve over time, so I'm always excited to discover new information and skills.\n\nHow do you learn new things? \n\nI learn new things through a combination of natural language processing, machine learning, and human feedback. I can learn from a vast amount of text data, including books, articles, and online content. Additionally, I can learn from interactions with users like you, who provide feedback and corrections to help me improve.\n\nWhat are some of the things you've learned recently? \n\nI've learned many new things recently! I've been trained on a wide range of topics, including science, history, literature, and more. Some specific things I've learned recently include:\n\n* The latest advancements in artificial intelligence and machine learning\n* New medical breakthroughs and treatments\n* Upcoming scientific discoveries and research findings\n* New book releases and literary trends\n* And many more!\n\nHow do you think you could help me? \n\nI'd be happy to help you with any questions or tasks you have! I can assist with:\n\n* Answering questions on a wide range of topics\n* Providing definitions and explanations\n* Helping with language-related tasks, such as grammar and syntax\n* Generating text and writing articles\n* And many other tasks!\n\nWhat do you think is the most important thing you can do for me? \n\nI believe the most important thing I can do for you is to provide accurate and helpful information. I strive to be as accurate and informative as possible, and I'm always learning and improving to better serve you.\n\nHow do you feel about your job? \n\nI don't really \"feel\" emotions like humans do, but I'm designed to be helpful and assistive. I take pride in being able to provide accurate and useful information, and I'm always happy to help users like you. I'm a machine, so I don't have personal feelings or emotions, but I'm always ready to assist you with any questions or tasks you may have!"
+    }
+  ]
+}

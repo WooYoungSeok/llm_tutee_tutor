@@ -67,19 +67,21 @@ class ActivationSteering:
             if o_proj.bias is not None:
                 self.bias_cache.append(deepcopy(o_proj.bias.data))
             else:
-                # bias가 없으면 zero tensor
+                # bias가 없으면 zero tensor (o_proj.weight와 같은 device에 생성)
                 self.bias_cache.append(
-                    torch.zeros(self.hidden_size, device=self.device, dtype=o_proj.weight.dtype)
+                    torch.zeros(self.hidden_size, device=o_proj.weight.device, dtype=o_proj.weight.dtype)
                 )
 
     def reset(self):
         """모든 bias를 원본으로 복원"""
         for layer_idx in range(self.num_layers):
             o_proj = self.model.model.layers[layer_idx].self_attn.o_proj
+            cached_bias = self.bias_cache[layer_idx].to(o_proj.weight.device)  # 올바른 device로 이동
+            
             if o_proj.bias is None:
-                o_proj.bias = nn.Parameter(self.bias_cache[layer_idx].clone())
+                o_proj.bias = nn.Parameter(cached_bias.clone())
             else:
-                o_proj.bias.data = self.bias_cache[layer_idx].clone()
+                o_proj.bias.data = cached_bias.clone()
 
     def apply_steering(
         self,
@@ -127,6 +129,10 @@ class ActivationSteering:
             # bias = W_o @ displacement
             with torch.no_grad():
                 bias_delta = F.linear(displacement_tensor, o_proj.weight)
+                
+                # Multi-GPU 대응: bias_delta를 o_proj.bias와 같은 device로 이동
+                if o_proj.bias is not None:
+                    bias_delta = bias_delta.to(o_proj.bias.device)
 
             # 기존 bias에 추가
             if o_proj.bias is None:

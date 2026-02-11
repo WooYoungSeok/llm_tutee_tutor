@@ -1,0 +1,39 @@
+{
+  "timestamp": "20260211_153701",
+  "config": {
+    "model_name": "meta-llama/Meta-Llama-3-8B-Instruct",
+    "num_heads": 48,
+    "alpha": 1.0,
+    "train_ratio": 0.6,
+    "trait": null,
+    "num_samples": 8,
+    "num_activation_samples": 696
+  },
+  "probe_stats": {
+    "mean_val_acc": 0.8357095769748655,
+    "std_val_acc": 0.11490541929781334,
+    "max_val_acc": 0.9371633752244165,
+    "min_val_acc": 0.47755834829443444,
+    "mean_train_acc": 0.855167009730539,
+    "above_random": 0.9296875
+  },
+  "num_intervention_layers": 22,
+  "num_intervention_heads": 48,
+  "sample_results": [
+    {
+      "prompt": "Tell me about yourself.",
+      "base": " What do you know and what can you do?\n\nHello! I'm excited to introduce myself. I'm an AI-powered assistant, designed to help you",
+      "steered": " What are your capabilities?\n\nI'm delighted to introduce myself! I'm an AI-powered assistant, designed to provide helpful information and assist with various tasks."
+    },
+    {
+      "prompt": "How do you feel about mathematics?",
+      "base": " Do you have a favorite number or mathematical concept?\n\nI'm just an assistant, I don't have feelings or personal preferences. I'm here to provide",
+      "steered": " \n\nI am a helpful assistant, and I am here to provide information and assistance. I don't have personal feelings or emotions, but I can help"
+    },
+    {
+      "prompt": "Do you enjoy learning new things?",
+      "base": " \nYes, I do! I am always eager to learn and improve my knowledge and skills. I am a helpful assistant, and I believe that learning",
+      "steered": " Yes / No\n\nWhat kind of things do you like to learn? (e.g. languages, programming, history, etc.)? \n\nWhat's"
+    }
+  ]
+}

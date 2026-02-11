@@ -20,7 +20,7 @@ from config import (
     SCRIPT_DIR, OUTPUT_DIR, TRAITS, TRAIT_NAMES,
     DEFAULT_MODEL, DEFAULT_NUM_HEADS, DEFAULT_TRAIN_RATIO
 )
-from data_utils import (
+from data_utils_fixed import (
     load_item_keys, load_samples, load_train_test_split,
     create_activation_samples, get_trait_samples
 )
@@ -28,7 +28,7 @@ from activation_extractor import (
     ActivationExtractor, extract_paired_activations, validate_activations
 )
 from probe_trainer import train_and_select_heads, ProbeTrainer
-from steering import ActivationSteering, grid_search_alpha
+from steering_fixed import ActivationSteering, grid_search_alpha
 
 
 def load_model(model_name: str, use_4bit: bool = False):
@@ -182,18 +182,18 @@ def step6_generate_samples(steering, test_prompts, alpha):
 
     results = []
 
-    for prompt in test_prompts[:3]:  # 처음 3개만
-        print(f"\n  Prompt: {prompt[:50]}...")
+    for prompt in test_prompts:  # 처음 3개만: [:3]
+        print(f"\n  Prompt: {prompt}")
 
         # Steering 없이 생성
         steering.reset()
-        output_base = steering.generate(prompt, max_new_tokens=30)
-        print(f"  [Base] {output_base[:80]}...")
+        output_base = steering.generate(prompt, max_new_tokens=500)
+        print(f"  [Base] {output_base}")
 
         # Steering 적용 후 생성
         steering.apply_steering(steering.interventions, alpha=alpha) if hasattr(steering, 'interventions') else None
-        output_steered = steering.generate(prompt, max_new_tokens=30)
-        print(f"  [Steered] {output_steered[:80]}...")
+        output_steered = steering.generate(prompt, max_new_tokens=500)
+        print(f"  [Steered] {output_steered}")
 
         results.append({
             'prompt': prompt,

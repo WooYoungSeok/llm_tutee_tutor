@@ -146,21 +146,12 @@ class ActivationExtractor:
         self._register_o_proj_hooks()
 
         try:
-            # 토큰화
-            if 'llama-3' in self.model_name.lower():
-                messages = [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": prompt}
-                ]
-                input_ids = self.tokenizer.apply_chat_template(
-                    messages, return_tensors="pt", add_generation_prompt=False
-                )
-            else:
-                B_INST, E_INST = "[INST]", "[/INST]"
-                B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
-                formatted = f"{B_INST} {B_SYS}{system_prompt}{E_SYS}{prompt} {E_INST}"
-                input_ids = self.tokenizer(formatted, return_tensors="pt").input_ids
-
+            # 토큰화 - chat template 대신 단순 텍스트 사용
+            # Chat template은 EOT 토큰을 추가하여 Yes/No가 마지막 토큰이 아니게 만듦
+            # 단순 텍스트 형식을 사용하여 Yes/No가 실제 마지막 토큰이 되도록 함
+            formatted_prompt = f"{system_prompt}\n\n{prompt}"
+            input_ids = self.tokenizer(formatted_prompt, return_tensors="pt").input_ids
+            
             input_ids = input_ids.to(self.device)
 
             # Forward pass
