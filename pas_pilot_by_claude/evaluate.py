@@ -76,25 +76,13 @@ def get_model_response(
 ) -> str:
     """
     모델의 Yes/No 응답 추출
-
-    Returns:
-        'Yes', 'No', or 'Unknown'
+    
+    중요: 학습 시와 동일한 단순 텍스트 형식 사용!
     """
     device = next(model.parameters()).device
 
-    # 프롬프트 포맷팅
-    if 'llama-3' in model_name.lower():
-        messages = [
-            {"role": "system", "content": "You are a helpful assistant. Answer with only 'Yes' or 'No'."},
-            {"role": "user", "content": prompt}
-        ]
-        input_ids = tokenizer.apply_chat_template(
-            messages, return_tensors="pt", add_generation_prompt=True
-        )
-    else:
-        formatted = f"[INST] <<SYS>>\nAnswer with only 'Yes' or 'No'.\n<</SYS>>\n\n{prompt} [/INST]"
-        input_ids = tokenizer(formatted, return_tensors="pt").input_ids
-
+    # 단순 텍스트 형식 (학습 시와 동일)
+    input_ids = tokenizer(prompt, return_tensors="pt").input_ids
     input_ids = input_ids.to(device)
 
     # 생성

@@ -195,17 +195,15 @@ def create_activation_samples(
         prompt_agree = PROMPT_TEMPLATE_AGREE.format(statement=statement.text)
         prompt_disagree = PROMPT_TEMPLATE_DISAGREE.format(statement=statement.text)
 
-        # Label 결정
-        # response=2 (Accurate)이고 key=+1이면: 높은 trait -> Agree가 positive (label=1)
-        # response=2 (Accurate)이고 key=-1이면: 낮은 trait -> Disagree가 positive (label=0)
-        # response=1 (Inaccurate)이고 key=+1이면: 낮은 trait -> Disagree가 positive (label=0)
-        # response=1 (Inaccurate)이고 key=-1이면: 높은 trait -> Agree가 positive (label=1)
-
-        is_accurate = (response == 2)
-        is_positive_keyed = (statement.key == 1)
-
-        # XOR 로직
-        label = 1 if (is_accurate == is_positive_keyed) else 0
+        # Label 결정 (Activation Steering용)
+        # 목표: 항상 "높은 trait" 방향을 positive로 설정
+        # - Key=+1 (positive keyed): Agree = 높은 trait → label=1
+        # - Key=-1 (negative keyed): Disagree = 높은 trait → label=0
+        # 
+        # 주의: 개인의 실제 response는 사용하지 않음!
+        # 모든 샘플에서 일관된 "높은 trait" direction을 학습하기 위함
+        
+        label = 1 if statement.key == 1 else 0
 
         activation_samples.append(ActivationSample(
             statement=statement,
