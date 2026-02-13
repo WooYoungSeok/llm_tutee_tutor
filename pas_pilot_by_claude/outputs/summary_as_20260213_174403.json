@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260213_174403",
+  "trait": "as",
+  "trait_name": "Academic Stress",
+  "config": {
+    "model_name": "meta-llama/Meta-Llama-3-8B-Instruct",
+    "num_heads": 48,
+    "train_ratio": 0.6,
+    "num_samples": 8
+  },
+  "probe_stats": {
+    "mean_val_acc": 0.7857967909946236,
+    "std_val_acc": 0.1724127924890766,
+    "max_val_acc": 0.9946236559139785,
+    "min_val_acc": 0.46774193548387094,
+    "mean_train_acc": 0.7852862241456835,
+    "above_random": 0.82421875
+  },
+  "num_intervention_layers": 17,
+  "num_intervention_heads": 48
+}

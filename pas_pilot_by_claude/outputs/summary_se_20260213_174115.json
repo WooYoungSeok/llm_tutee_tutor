@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260213_174115",
+  "trait": "se",
+  "trait_name": "Self-Efficacy",
+  "config": {
+    "model_name": "meta-llama/Meta-Llama-3-8B-Instruct",
+    "num_heads": 48,
+    "train_ratio": 0.6,
+    "num_samples": 8
+  },
+  "probe_stats": {
+    "mean_val_acc": 0.8319944976478494,
+    "std_val_acc": 0.10170876123567757,
+    "max_val_acc": 1.0,
+    "min_val_acc": 0.5,
+    "mean_train_acc": 0.828665973471223,
+    "above_random": 0.982421875
+  },
+  "num_intervention_layers": 14,
+  "num_intervention_heads": 48
+}

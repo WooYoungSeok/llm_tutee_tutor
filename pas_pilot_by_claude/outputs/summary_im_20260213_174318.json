@@ -1,0 +1,21 @@
+{
+  "timestamp": "20260213_174318",
+  "trait": "im",
+  "trait_name": "Intrinsic Motivation",
+  "config": {
+    "model_name": "meta-llama/Meta-Llama-3-8B-Instruct",
+    "num_heads": 48,
+    "train_ratio": 0.6,
+    "num_samples": 8
+  },
+  "probe_stats": {
+    "mean_val_acc": 0.7186869959677419,
+    "std_val_acc": 0.1699794236289345,
+    "max_val_acc": 1.0,
+    "min_val_acc": 0.44623655913978494,
+    "mean_train_acc": 0.739292940647482,
+    "above_random": 0.732421875
+  },
+  "num_intervention_layers": 17,
+  "num_intervention_heads": 48
+}
