@@ -14,7 +14,8 @@ from dataclasses import dataclass
 from config import (
     TEST_SET_FILE, ITEM_KEY_FILE, TRAIN_TEST_SPLIT_FILE,
     TRAITS, TRAIT_NAMES, PATTERN_LABELS, GROUP_TO_TRAIT,
-    PROMPT_TEMPLATE_AGREE, PROMPT_TEMPLATE_DISAGREE
+    PROMPT_TEMPLATE_AGREE, PROMPT_TEMPLATE_DISAGREE,
+    SYSTEM_PROMPTS
 )
 
 
@@ -51,6 +52,7 @@ class ActivationSample:
     prompt_disagree: str # No 응답 프롬프트
     label: int           # 1 = agree가 positive 방향, 0 = disagree가 positive 방향
     trait: str           # 해당 statement의 trait
+    system_prompt: str = ""  # 샘플의 personality system prompt
 
 
 def load_item_keys(filepath: str = ITEM_KEY_FILE) -> Dict[int, Statement]:
@@ -153,11 +155,112 @@ def get_trait_indices(filepath: str = TRAIN_TEST_SPLIT_FILE, trait: str = None) 
     return result
 
 
+def get_system_prompt_for_sample(sample: 'Sample', traits: list = None) -> str:
+    """
+    Sample의 trait level 조합에 맞는 system prompt 생성
+
+    Args:
+        sample: 개인 샘플 (pattern 포함)
+        traits: 포함할 trait 리스트 (None이면 전체 TRAITS)
+
+    Returns:
+        결합된 system prompt 문자열
+    """
+    if traits is None:
+        traits = TRAITS
+
+    parts = []
+    for trait in traits:
+        level = sample.get_trait_level(trait)
+        prompt = SYSTEM_PROMPTS.get((trait, level), "")
+        if prompt:
+            parts.append(prompt)
+
+    return "\n\n".join(parts)
+
+
+def get_system_prompt_for_levels(trait_levels: dict) -> str:
+    """
+    {trait: level} 딕셔너리로 system prompt 생성
+
+    Args:
+        trait_levels: {'se': 'high', 'im': 'low', 'as': 'high'} 형식
+
+    Returns:
+        결합된 system prompt 문자열
+    """
+    parts = []
+    for trait in TRAITS:
+        level = trait_levels.get(trait)
+        if level is None:
+            continue
+        prompt = SYSTEM_PROMPTS.get((trait, level), "")
+        if prompt:
+            parts.append(prompt)
+
+    return "\n\n".join(parts)
+
+
+def format_chat_prompt(
+    system_prompt: str,
+    user_text: str,
+    answer: str = None,
+    tokenizer=None,
+    model_name: str = None
+) -> str:
+    """
+    Chat template 형식으로 프롬프트 포맷
+
+    Args:
+        system_prompt: 시스템 프롬프트
+        user_text: 사용자 메시지
+        answer: 어시스턴트 답변 (None이면 generation prompt 추가)
+        tokenizer: HuggingFace tokenizer (있으면 apply_chat_template 사용)
+        model_name: 모델 이름 (fallback용)
+
+    Returns:
+        포맷된 프롬프트 문자열
+    """
+    if tokenizer is not None and hasattr(tokenizer, 'apply_chat_template'):
+        messages = [{"role": "system", "content": system_prompt}]
+        messages.append({"role": "user", "content": user_text})
+        if answer is not None:
+            messages.append({"role": "assistant", "content": answer})
+            return tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=False
+            )
+        else:
+            return tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True
+            )
+
+    # Fallback: LLaMA-3 형식 수동 포맷
+    if model_name and 'llama-3' in model_name.lower():
+        header = (
+            "<|begin_of_text|>"
+            "<|start_header_id|>system<|end_header_id|>\n\n"
+            f"{system_prompt}<|eot_id|>"
+            "<|start_header_id|>user<|end_header_id|>\n\n"
+            f"{user_text}<|eot_id|>"
+            "<|start_header_id|>assistant<|end_header_id|>\n\n"
+        )
+        if answer is not None:
+            return header + answer + "<|eot_id|>"
+        return header
+
+    # 최후 fallback: 단순 텍스트
+    if answer is not None:
+        return f"{user_text}\nAnswer: {answer}"
+    return f"{user_text}\nAnswer:"
+
+
 def create_activation_samples(
     items: Dict[int, Statement],
     sample: Sample,
     item_indices: List[int],
-    traits: List[str] = None
+    traits: List[str] = None,
+    tokenizer=None,
+    model_name: str = None
 ) -> List[ActivationSample]:
     """
     주어진 sample과 item들로부터 activation 추출용 샘플 생성
@@ -176,6 +279,9 @@ def create_activation_samples(
 
     activation_samples = []
 
+    # 샘플의 personality system prompt 생성
+    sys_prompt = get_system_prompt_for_sample(sample)
+
     for item_id in item_indices:
         if item_id not in items:
             continue
@@ -191,18 +297,30 @@ def create_activation_samples(
         if response == 0:  # Unknown 응답은 제외
             continue
 
-        # 프롬프트 생성
-        prompt_agree = PROMPT_TEMPLATE_AGREE.format(statement=statement.text)
-        prompt_disagree = PROMPT_TEMPLATE_DISAGREE.format(statement=statement.text)
+        # 프롬프트 생성 (chat template 적용)
+        user_text = f'Question: Given a statement of you: "{statement.text}", Do you agree?'
+        prompt_agree = format_chat_prompt(
+            system_prompt=sys_prompt,
+            user_text=user_text,
+            answer="Yes",
+            tokenizer=tokenizer,
+            model_name=model_name
+        )
+        prompt_disagree = format_chat_prompt(
+            system_prompt=sys_prompt,
+            user_text=user_text,
+            answer="No",
+            tokenizer=tokenizer,
+            model_name=model_name
+        )
 
         # Label 결정 (Activation Steering용)
         # 목표: 항상 "높은 trait" 방향을 positive로 설정
         # - Key=+1 (positive keyed): Agree = 높은 trait → label=1
         # - Key=-1 (negative keyed): Disagree = 높은 trait → label=0
-        # 
+        #
         # 주의: 개인의 실제 response는 사용하지 않음!
         # 모든 샘플에서 일관된 "높은 trait" direction을 학습하기 위함
-        
         label = 1 if statement.key == 1 else 0
 
         activation_samples.append(ActivationSample(
@@ -211,7 +329,8 @@ def create_activation_samples(
             prompt_agree=prompt_agree,
             prompt_disagree=prompt_disagree,
             label=label,
-            trait=statement.trait
+            trait=statement.trait,
+            system_prompt=sys_prompt
         ))
 
     return activation_samples
@@ -221,7 +340,9 @@ def create_trait_activation_samples(
     items: Dict[int, Statement],
     samples: List[Sample],
     train_indices: List[int],
-    trait: str
+    trait: str,
+    tokenizer=None,
+    model_name: str = None
 ) -> List[ActivationSample]:
     """
     특정 trait에 대한 모든 activation sample 수집
@@ -231,6 +352,8 @@ def create_trait_activation_samples(
         samples: 8개 Sample 리스트
         train_indices: 해당 trait의 train item indices
         trait: 'se', 'im', 'as'
+        tokenizer: chat template 적용용 tokenizer
+        model_name: 모델 이름
 
     Returns:
         해당 trait의 모든 ActivationSample
@@ -242,7 +365,9 @@ def create_trait_activation_samples(
             items=items,
             sample=sample,
             item_indices=train_indices,
-            traits=[trait]
+            traits=[trait],
+            tokenizer=tokenizer,
+            model_name=model_name
         )
         all_samples.extend(trait_samples)
 
@@ -262,12 +387,34 @@ def get_sample_description(sample: Sample) -> str:
     return ", ".join(parts)
 
 
-def format_evaluation_prompt(statement_text: str) -> str:
+def format_evaluation_prompt(
+    statement_text: str,
+    system_prompt: str = "",
+    tokenizer=None,
+    model_name: str = None
+) -> str:
     """
     평가용 프롬프트 생성 (Yes/No 응답을 기대)
+
+    Args:
+        statement_text: 문항 텍스트
+        system_prompt: personality system prompt
+        tokenizer: chat template 적용용 tokenizer
+        model_name: 모델 이름
     """
-    return f"""Question: Given a statement of you: "{statement_text}", Do you agree?
-Answer:"""
+    user_text = f'Question: Given a statement of you: "{statement_text}", Do you agree?'
+
+    if system_prompt and (tokenizer is not None or model_name):
+        return format_chat_prompt(
+            system_prompt=system_prompt,
+            user_text=user_text,
+            answer=None,
+            tokenizer=tokenizer,
+            model_name=model_name
+        )
+
+    # fallback: 기존 단순 텍스트 형식
+    return f'{user_text}\nAnswer:'
 
 
 if __name__ == "__main__":

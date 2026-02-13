@@ -113,12 +113,14 @@ def train_trait_steering(
     train_indices = trait_indices[trait]['train']
     print(f"Using {len(train_indices)} train items for {trait}")
 
-    # Activation samples 생성
+    # Activation samples 생성 (chat template 적용)
     activation_samples = create_trait_activation_samples(
         items=items,
         samples=samples,
         train_indices=train_indices,
-        trait=trait
+        trait=trait,
+        tokenizer=tokenizer,
+        model_name=model_name
     )
     print(f"Created {len(activation_samples)} activation samples")
 
