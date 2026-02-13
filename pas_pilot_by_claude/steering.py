@@ -67,19 +67,21 @@ class ActivationSteering:
             if o_proj.bias is not None:
                 self.bias_cache.append(deepcopy(o_proj.bias.data))
             else:
-                # bias가 없으면 zero tensor
+                # bias가 없으면 zero tensor (o_proj.weight와 같은 device에 생성)
                 self.bias_cache.append(
-                    torch.zeros(self.hidden_size, device=self.device, dtype=o_proj.weight.dtype)
+                    torch.zeros(self.hidden_size, device=o_proj.weight.device, dtype=o_proj.weight.dtype)
                 )
 
     def reset(self):
         """모든 bias를 원본으로 복원"""
         for layer_idx in range(self.num_layers):
             o_proj = self.model.model.layers[layer_idx].self_attn.o_proj
+            cached_bias = self.bias_cache[layer_idx].to(o_proj.weight.device)  # 올바른 device로 이동
+            
             if o_proj.bias is None:
-                o_proj.bias = nn.Parameter(self.bias_cache[layer_idx].clone())
+                o_proj.bias = nn.Parameter(cached_bias.clone())
             else:
-                o_proj.bias.data = self.bias_cache[layer_idx].clone()
+                o_proj.bias.data = cached_bias.clone()
 
     def apply_steering(
         self,
@@ -115,11 +117,11 @@ class ActivationSteering:
             # (num_heads, head_dim) -> (hidden_size,)
             displacement_flat = displacement.reshape(-1)
 
-            # Tensor로 변환
+            # Tensor로 변환 - o_proj가 있는 디바이스 사용 (multi-GPU 대응)
             o_proj = self.model.model.layers[layer_idx].self_attn.o_proj
             displacement_tensor = torch.tensor(
                 displacement_flat,
-                device=self.device,
+                device=o_proj.weight.device,  # self.device 대신 o_proj의 device 사용
                 dtype=o_proj.weight.dtype
             )
 
@@ -127,6 +129,10 @@ class ActivationSteering:
             # bias = W_o @ displacement
             with torch.no_grad():
                 bias_delta = F.linear(displacement_tensor, o_proj.weight)
+                
+                # Multi-GPU 대응: bias_delta를 o_proj.bias와 같은 device로 이동
+                if o_proj.bias is not None:
+                    bias_delta = bias_delta.to(o_proj.bias.device)
 
             # 기존 bias에 추가
             if o_proj.bias is None:
@@ -155,21 +161,9 @@ class ActivationSteering:
         Returns:
             생성된 텍스트
         """
-        # 토큰화
-        if 'llama-3' in self.model_name.lower():
-            messages = [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt}
-            ]
-            input_ids = self.tokenizer.apply_chat_template(
-                messages, return_tensors="pt", add_generation_prompt=True
-            )
-        else:
-            B_INST, E_INST = "[INST]", "[/INST]"
-            B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
-            formatted = f"{B_INST} {B_SYS}{system_prompt}{E_SYS}{prompt} {E_INST}"
-            input_ids = self.tokenizer(formatted, return_tensors="pt").input_ids
-
+        # 토큰화 - 단순 텍스트 형식 사용
+        formatted_prompt = f"{system_prompt}\n\n{prompt}"
+        input_ids = self.tokenizer(formatted_prompt, return_tensors="pt").input_ids
         input_ids = input_ids.to(self.device)
 
         # 생성

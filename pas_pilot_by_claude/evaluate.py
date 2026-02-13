@@ -280,7 +280,11 @@ def evaluate_trait(
 
         # Steered 모델 평가 (persona prompt 사용)
         if interventions and steering:
-            steering.apply_steering(interventions, alpha=alpha)
+            # interventions는 'high trait' 방향이라고 가정
+            mag = abs(alpha)
+            signed_alpha = mag if trait_level == "high" else -mag
+            
+            steering.apply_steering(interventions, alpha=signed_alpha)
 
             steered_result = evaluate_sample_accuracy(
                 model, tokenizer, model_name,
