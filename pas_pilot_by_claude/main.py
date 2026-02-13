@@ -27,8 +27,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 
 from config import (
     SCRIPT_DIR, OUTPUT_DIR, TRAITS, TRAIT_NAMES,
-    DEFAULT_MODEL, DEFAULT_NUM_HEADS, DEFAULT_TRAIN_RATIO, DEFAULT_ALPHA,
-    get_persona_prompt
+    DEFAULT_MODEL, DEFAULT_NUM_HEADS, DEFAULT_TRAIN_RATIO, DEFAULT_ALPHA
 )
 from data_utils import (
     load_item_keys, load_samples, get_trait_indices,
@@ -131,20 +130,12 @@ def train_trait_steering(
     labels = [s.label for s in activation_samples]
     print(f"Labels: {sum(labels)} positive, {len(labels) - sum(labels)} negative")
 
-    # Persona prompt 생성 (high trait level 사용)
-    # 학습 시에는 "high" trait을 기준으로 direction을 찾음
-    persona_prompt = get_persona_prompt(trait, 'high')
-    print(f"\nUsing persona prompt for {trait.upper()}-high")
-    print(f"  {persona_prompt[:80]}...")
-
     # Activation 추출
     print(f"\nExtracting activations...")
     extractor = ActivationExtractor(model, tokenizer, model_name)
 
     agree_acts, disagree_acts, labels_arr = extract_paired_activations(
-        extractor, activation_samples,
-        system_prompt=persona_prompt,
-        show_progress=True
+        extractor, activation_samples, show_progress=True
     )
 
     # 유효성 검사

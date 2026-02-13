@@ -239,26 +239,16 @@ class ActivationExtractor:
 def extract_paired_activations(
     extractor: ActivationExtractor,
     activation_samples,  # List[ActivationSample]
-    system_prompt: str = None,
     show_progress: bool = True
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     ActivationSample 리스트에서 agree/disagree 쌍의 activation 추출
-
-    Args:
-        extractor: ActivationExtractor 인스턴스
-        activation_samples: ActivationSample 리스트
-        system_prompt: 시스템 프롬프트 (None이면 기본값 사용)
-        show_progress: tqdm 표시 여부
 
     Returns:
         agree_activations: shape (n_samples, num_layers, num_heads, head_dim)
         disagree_activations: shape (n_samples, num_layers, num_heads, head_dim)
         labels: shape (n_samples,) - 1 if agree is positive direction, 0 otherwise
     """
-    if system_prompt is None:
-        system_prompt = "You are a helpful assistant."
-
     agree_acts = []
     disagree_acts = []
     labels = []
@@ -266,12 +256,12 @@ def extract_paired_activations(
     iterator = tqdm(activation_samples, desc="Extracting paired activations") if show_progress else activation_samples
 
     for sample in iterator:
-        # Agree 프롬프트 activation (시스템 프롬프트 적용)
-        agree_act = extractor.extract_head_activations(sample.prompt_agree, system_prompt)
+        # Agree 프롬프트 activation
+        agree_act = extractor.extract_head_activations(sample.prompt_agree)
         agree_acts.append(agree_act)
 
-        # Disagree 프롬프트 activation (시스템 프롬프트 적용)
-        disagree_act = extractor.extract_head_activations(sample.prompt_disagree, system_prompt)
+        # Disagree 프롬프트 activation
+        disagree_act = extractor.extract_head_activations(sample.prompt_disagree)
         disagree_acts.append(disagree_act)
 
         labels.append(sample.label)

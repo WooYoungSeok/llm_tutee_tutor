@@ -1,22 +1,20 @@
 """
 chat.py
 =======
-Steered 모델과 대화하며 Alpha 값 조정 (단일 trait 모드)
+Steered 모델과 대화하며 Alpha 값 조정
 
-특정 trait에 대해 persona prompt를 적용하고 alpha 값을 조정하며 대화합니다.
+각 trait별로 alpha 값을 실시간으로 조정하며 대화할 수 있습니다.
 
 실행:
-    python chat.py --trait se           # SE trait으로 대화
-    python chat.py --trait im --alpha 2.0  # IM trait, alpha=2.0
-    python chat.py --trait as --level low  # AS-low persona로 대화
+    python chat.py
 
 명령어:
-    /alpha <value>   - Alpha 값 설정 (예: /alpha 2.0)
-    /level high      - High level persona로 전환
-    /level low       - Low level persona로 전환
-    /reset           - Alpha를 0으로 리셋
-    /status          - 현재 상태 확인
-    /clear           - 대화 히스토리 초기화
+    /alpha se 2.0    - SE의 alpha를 2.0으로 설정
+    /alpha im -1.0   - IM의 alpha를 -1.0으로 설정 (반대 방향)
+    /alpha as 0      - AS steering 끄기
+    /reset           - 모든 alpha를 0으로 리셋
+    /status          - 현재 alpha 값 확인
+    /load se         - SE intervention 파일 로드
     /help            - 도움말 출력
     /quit            - 종료
 """
@@ -29,16 +27,14 @@ from glob import glob
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 from config import (
-    OUTPUT_DIR, TRAITS, TRAIT_NAMES, DEFAULT_MODEL, DEFAULT_ALPHA,
-    get_persona_prompt
+    OUTPUT_DIR, TRAITS, TRAIT_NAMES, DEFAULT_MODEL, DEFAULT_ALPHA
 )
 from steering import ActivationSteering
 
 
-class SingleTraitChat:
+class InteractiveChat:
     """
-    단일 Trait에 대한 대화 인터페이스
-    Persona prompt + Activation Steering 적용
+    Trait별 Alpha 조정이 가능한 대화 인터페이스
     """
 
     def __init__(
@@ -46,39 +42,32 @@ class SingleTraitChat:
         model,
         tokenizer,
         model_name: str,
-        trait: str,
-        level: str = 'high',
-        alpha: float = DEFAULT_ALPHA,
         output_dir: str = OUTPUT_DIR
     ):
         self.model = model
         self.tokenizer = tokenizer
         self.model_name = model_name
-        self.trait = trait
-        self.level = level
-        self.alpha = alpha
         self.output_dir = output_dir
-
-        # Multi-GPU 대응
-        self.device = model.model.layers[0].self_attn.o_proj.weight.device
+        self.device = next(model.parameters()).device
 
         # Steering 초기화
         self.steering = ActivationSteering(model, tokenizer, model_name)
 
-        # Intervention 로드
-        self.interventions = None
-        self.load_intervention()
+        # Trait별 interventions 및 alpha
+        self.interventions = {}  # {trait: intervention_dict}
+        self.alphas = {trait: 0.0 for trait in TRAITS}  # 초기값 0 (steering 없음)
 
         # 채팅 히스토리
         self.history = []
 
-    def load_intervention(self, filepath: str = None):
+    def load_intervention(self, trait: str, filepath: str = None):
         """Intervention 파일 로드"""
         if filepath is None:
-            pattern = os.path.join(self.output_dir, f"interventions_{self.trait}_*.pkl")
+            # 최신 파일 찾기
+            pattern = os.path.join(self.output_dir, f"interventions_{trait}_*.pkl")
             files = sorted(glob(pattern))
             if not files:
-                print(f"WARNING: No intervention file found for {self.trait}")
+                print(f"No intervention file found for {trait}")
                 return False
             filepath = files[-1]
 
@@ -87,38 +76,46 @@ class SingleTraitChat:
             return False
 
         with open(filepath, 'rb') as f:
-            self.interventions = pickle.load(f)
+            self.interventions[trait] = pickle.load(f)
 
-        n_heads = sum(len(h) for h in self.interventions.values())
-        print(f"Loaded {self.trait.upper()} intervention: {n_heads} heads from {filepath}")
+        n_heads = sum(len(h) for h in self.interventions[trait].values())
+        print(f"Loaded {trait.upper()} intervention: {n_heads} heads from {filepath}")
         return True
 
-    def get_current_persona_prompt(self) -> str:
-        """현재 level에 맞는 persona prompt 반환"""
-        return get_persona_prompt(self.trait, self.level)
+    def load_all_interventions(self):
+        """모든 trait의 intervention 로드 시도"""
+        for trait in TRAITS:
+            self.load_intervention(trait)
 
-    def apply_steering(self):
-        """현재 alpha로 steering 적용"""
+    def apply_current_steering(self):
+        """현재 alpha 설정으로 steering 적용"""
+        # 먼저 리셋
         self.steering.reset()
 
-        if self.interventions and abs(self.alpha) > 1e-6:
-            self.steering.apply_steering(self.interventions, alpha=self.alpha)
+        # 각 trait의 intervention을 현재 alpha로 적용
+        for trait in TRAITS:
+            if trait not in self.interventions:
+                continue
 
-    def generate_response(self, user_input: str, max_new_tokens: int = 150) -> str:
-        """현재 설정으로 응답 생성"""
+            alpha = self.alphas[trait]
+            if abs(alpha) < 1e-6:  # alpha가 0이면 skip
+                continue
+
+            interventions = self.interventions[trait]
+            self.steering.apply_steering(interventions, alpha=alpha)
+
+    def generate_response(self, user_input: str, max_new_tokens: int = 512) -> str:
+        """현재 steering 설정으로 응답 생성"""
         # Steering 적용
-        self.apply_steering()
-
-        # Persona prompt 가져오기
-        persona_prompt = self.get_current_persona_prompt()
+        self.apply_current_steering()
 
         # 프롬프트 생성
         if 'llama-3' in self.model_name.lower():
             messages = [
-                {"role": "system", "content": persona_prompt}
+                {"role": "system", "content": "You are a helpful assistant."}
             ]
             # 히스토리 추가
-            for h in self.history[-4:]:
+            for h in self.history[-4:]:  # 최근 4턴만 유지
                 messages.append({"role": "user", "content": h['user']})
                 messages.append({"role": "assistant", "content": h['assistant']})
             messages.append({"role": "user", "content": user_input})
@@ -127,7 +124,8 @@ class SingleTraitChat:
                 messages, return_tensors="pt", add_generation_prompt=True
             )
         else:
-            prompt = f"[INST] <<SYS>>\n{persona_prompt}\n<</SYS>>\n\n{user_input} [/INST]"
+            # Llama-2 형식
+            prompt = f"[INST] <<SYS>>\nYou are a helpful assistant.\n<</SYS>>\n\n{user_input} [/INST]"
             input_ids = self.tokenizer(prompt, return_tensors="pt").input_ids
 
         input_ids = input_ids.to(self.device)
@@ -155,56 +153,72 @@ class SingleTraitChat:
     def print_status(self):
         """현재 상태 출력"""
         print("\n" + "="*50)
-        print(f"Current Status: {TRAIT_NAMES[self.trait]} ({self.trait.upper()})")
+        print("Current Steering Status")
         print("="*50)
-        print(f"  Trait Level: {self.level.upper()}")
-        print(f"  Alpha: {self.alpha:+.2f}")
-        print(f"  Intervention: {'LOADED' if self.interventions else 'NOT LOADED'}")
-        print(f"  Steering: {'ACTIVE' if self.interventions and abs(self.alpha) > 1e-6 else 'INACTIVE'}")
-        print("\nPersona Prompt:")
-        print(f"  {self.get_current_persona_prompt()[:100]}...")
+
+        for trait in TRAITS:
+            loaded = trait in self.interventions
+            alpha = self.alphas[trait]
+            status = "LOADED" if loaded else "NOT LOADED"
+            active = "ACTIVE" if loaded and abs(alpha) > 1e-6 else "INACTIVE"
+
+            print(f"  {TRAIT_NAMES[trait]} ({trait.upper()}):")
+            print(f"    Status: {status}")
+            print(f"    Alpha: {alpha:+.2f}")
+            print(f"    Steering: {active}")
+
         print("="*50 + "\n")
 
     def print_help(self):
         """도움말 출력"""
-        print(f"""
+        print("""
 ========================================
-Interactive Chat - {TRAIT_NAMES[self.trait]} ({self.trait.upper()})
+Interactive Chat Commands
 ========================================
 
 Alpha Adjustment:
-  /alpha <value>  - Set alpha value
-                    Example: /alpha 2.0
-                    Positive: steer towards HIGH {self.trait.upper()}
-                    Negative: steer towards LOW {self.trait.upper()}
+  /alpha <trait> <value>  - Set alpha for a trait
+                            Example: /alpha se 2.0
+                            Negative values steer in opposite direction
+                            Example: /alpha im -1.5
 
-  /reset          - Reset alpha to 0 (no steering)
+  /reset                  - Reset all alphas to 0
 
-Persona Level:
-  /level high     - Use HIGH {self.trait.upper()} persona prompt
-  /level low      - Use LOW {self.trait.upper()} persona prompt
+Intervention Management:
+  /load <trait>           - Load intervention file for a trait
+  /load all               - Load all available interventions
 
 Status:
-  /status         - Show current settings
+  /status                 - Show current alpha values and status
 
 Other:
-  /clear          - Clear chat history
-  /help           - Show this help message
-  /quit           - Exit the chat
+  /clear                  - Clear chat history
+  /help                   - Show this help message
+  /quit, /exit, /q        - Exit the chat
+
+Traits:
+  se  - Self-Efficacy
+  im  - Intrinsic Motivation
+  as  - Academic Stress
 
 Example Session:
-  /level high
-  /alpha 2.0
+  /load all
+  /alpha se 2.0
+  /alpha im 1.5
   /status
-  Tell me about your approach to learning.
-  /alpha -2.0
-  /level low
-  Tell me about your approach to learning.
+  Tell me about your approach to learning mathematics.
+  /alpha se -1.0
+  Tell me about your approach to learning mathematics.
 ========================================
 """)
 
     def process_command(self, cmd: str) -> bool:
-        """명령어 처리"""
+        """
+        명령어 처리
+
+        Returns:
+            True if should continue, False if should exit
+        """
         parts = cmd.strip().split()
         if not parts:
             return True
@@ -222,37 +236,45 @@ Example Session:
             self.print_status()
 
         elif command == '/reset':
-            self.alpha = 0.0
-            print("Alpha reset to 0")
+            for trait in TRAITS:
+                self.alphas[trait] = 0.0
+            print("All alphas reset to 0")
             self.print_status()
 
         elif command == '/clear':
             self.history = []
             print("Chat history cleared")
 
-        elif command == '/alpha':
+        elif command == '/load':
             if len(parts) < 2:
-                print("Usage: /alpha <value>")
-                print(f"Current alpha: {self.alpha:+.2f}")
+                print("Usage: /load <trait> or /load all")
+            elif parts[1].lower() == 'all':
+                self.load_all_interventions()
+            elif parts[1].lower() in TRAITS:
+                self.load_intervention(parts[1].lower())
             else:
-                try:
-                    value = float(parts[1])
-                    self.alpha = value
-                    print(f"Set alpha to {value:+.2f}")
-                except ValueError:
-                    print(f"Invalid alpha value: {parts[1]}")
+                print(f"Unknown trait: {parts[1]}")
+                print(f"Available traits: {', '.join(TRAITS)}")
 
-        elif command == '/level':
-            if len(parts) < 2:
-                print("Usage: /level <high|low>")
-                print(f"Current level: {self.level}")
-            elif parts[1].lower() in ['high', 'low']:
-                self.level = parts[1].lower()
-                print(f"Set level to {self.level.upper()}")
-                print(f"Persona: {self.get_current_persona_prompt()[:80]}...")
+        elif command == '/alpha':
+            if len(parts) < 3:
+                print("Usage: /alpha <trait> <value>")
+                print("Example: /alpha se 2.0")
             else:
-                print(f"Invalid level: {parts[1]}")
-                print("Available levels: high, low")
+                trait = parts[1].lower()
+                if trait not in TRAITS:
+                    print(f"Unknown trait: {trait}")
+                    print(f"Available traits: {', '.join(TRAITS)}")
+                else:
+                    try:
+                        value = float(parts[2])
+                        self.alphas[trait] = value
+                        print(f"Set {trait.upper()} alpha to {value:+.2f}")
+
+                        if trait not in self.interventions:
+                            print(f"Warning: No intervention loaded for {trait}. Use /load {trait}")
+                    except ValueError:
+                        print(f"Invalid alpha value: {parts[2]}")
 
         else:
             print(f"Unknown command: {command}")
@@ -263,10 +285,12 @@ Example Session:
     def run(self):
         """대화 루프 실행"""
         print("\n" + "#"*50)
-        print(f"Interactive Chat: {TRAIT_NAMES[self.trait]} ({self.trait.upper()})")
+        print("Interactive Chat with Steered LLM")
         print("#"*50)
-        print("\nType /help for commands, /quit to exit\n")
+        print("\nType /help for commands, /quit to exit")
+        print("Loading available interventions...\n")
 
+        self.load_all_interventions()
         self.print_status()
 
         while True:
@@ -288,8 +312,6 @@ Example Session:
                 print("\n\nInterrupted. Type /quit to exit.")
             except Exception as e:
                 print(f"\nError: {e}")
-                import traceback
-                traceback.print_exc()
 
 
 def load_model(model_name: str, use_4bit: bool = False):
@@ -326,15 +348,9 @@ def load_model(model_name: str, use_4bit: bool = False):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Interactive Chat with Steered LLM (Single Trait)")
+    parser = argparse.ArgumentParser(description="Interactive Chat with Steered LLM")
     parser.add_argument("--model_name", type=str, default=DEFAULT_MODEL,
                         help="HuggingFace model name")
-    parser.add_argument("--trait", type=str, required=True, choices=TRAITS,
-                        help="Trait to use for steering (se, im, as)")
-    parser.add_argument("--level", type=str, default='high', choices=['high', 'low'],
-                        help="Initial persona level (high or low)")
-    parser.add_argument("--alpha", type=float, default=DEFAULT_ALPHA,
-                        help="Initial alpha value for steering")
     parser.add_argument("--use_4bit", action="store_true",
                         help="Use 4-bit quantization")
     parser.add_argument("--output_dir", type=str, default=OUTPUT_DIR,
@@ -342,23 +358,14 @@ def main():
 
     args = parser.parse_args()
 
-    print(f"\n{'#'*50}")
-    print(f"Starting chat for {TRAIT_NAMES[args.trait]} ({args.trait.upper()})")
-    print(f"  Level: {args.level.upper()}")
-    print(f"  Alpha: {args.alpha:+.2f}")
-    print(f"{'#'*50}\n")
-
     # 모델 로드
     model, tokenizer = load_model(args.model_name, args.use_4bit)
 
     # 대화 시작
-    chat = SingleTraitChat(
+    chat = InteractiveChat(
         model=model,
         tokenizer=tokenizer,
         model_name=args.model_name,
-        trait=args.trait,
-        level=args.level,
-        alpha=args.alpha,
         output_dir=args.output_dir
     )
 
