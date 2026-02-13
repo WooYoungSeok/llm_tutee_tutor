@@ -30,7 +30,8 @@ from config import (
 )
 from data_utils import (
     load_item_keys, load_samples, get_trait_indices,
-    format_evaluation_prompt, get_sample_description
+    format_evaluation_prompt, get_sample_description,
+    get_system_prompt_for_sample
 )
 from steering import ActivationSteering
 
@@ -76,12 +77,12 @@ def get_model_response(
 ) -> str:
     """
     모델의 Yes/No 응답 추출
-    
-    중요: 학습 시와 동일한 단순 텍스트 형식 사용!
+
+    중요: 학습 시와 동일한 chat template 형식 사용!
     """
     device = next(model.parameters()).device
 
-    # 단순 텍스트 형식 (학습 시와 동일)
+    # chat template이 적용된 프롬프트를 그대로 토크나이즈
     input_ids = tokenizer(prompt, return_tensors="pt").input_ids
     input_ids = input_ids.to(device)
 
@@ -115,7 +116,8 @@ def evaluate_sample_accuracy(
     items: dict,
     sample,
     test_indices: list,
-    trait: str
+    trait: str,
+    system_prompt: str = ""
 ) -> dict:
     """
     특정 샘플에 대해 test items의 정답률 계산
@@ -148,8 +150,13 @@ def evaluate_sample_accuracy(
         expected_label = 1 if (is_accurate == is_positive_keyed) else 0
         expected_response = 'Yes' if expected_label == 1 else 'No'
 
-        # 모델 응답 획득
-        prompt = format_evaluation_prompt(statement.text)
+        # 모델 응답 획득 (chat template + system prompt 적용)
+        prompt = format_evaluation_prompt(
+            statement.text,
+            system_prompt=system_prompt,
+            tokenizer=tokenizer,
+            model_name=model_name
+        )
         actual_response = get_model_response(model, tokenizer, prompt, model_name)
 
         is_correct = (actual_response == expected_response)
@@ -208,6 +215,9 @@ def evaluate_trait(
         sample_desc = get_sample_description(sample)
         trait_level = sample.get_trait_level(trait)
 
+        # 샘플의 personality system prompt 생성 (학습 시와 동일한 포맷)
+        sample_sys_prompt = get_system_prompt_for_sample(sample)
+
         result = {
             'case': sample.case,
             'description': sample_desc,
@@ -220,7 +230,8 @@ def evaluate_trait(
 
         base_result = evaluate_sample_accuracy(
             model, tokenizer, model_name,
-            items, sample, test_indices, trait
+            items, sample, test_indices, trait,
+            system_prompt=sample_sys_prompt
         )
         result['base_accuracy'] = base_result['accuracy']
         result['base_correct'] = base_result['correct']
@@ -231,12 +242,13 @@ def evaluate_trait(
             # interventions는 'high trait' 방향이라고 가정
             mag = abs(alpha)
             signed_alpha = mag if trait_level == "high" else -mag
-            
+
             steering.apply_steering(interventions, alpha=signed_alpha)
 
             steered_result = evaluate_sample_accuracy(
                 model, tokenizer, model_name,
-                items, sample, test_indices, trait
+                items, sample, test_indices, trait,
+                system_prompt=sample_sys_prompt
             )
             result['steered_accuracy'] = steered_result['accuracy']
             result['steered_correct'] = steered_result['correct']
