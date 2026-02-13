@@ -279,8 +279,8 @@ def create_activation_samples(
 
     activation_samples = []
 
-    # 샘플의 personality system prompt 생성
-    sys_prompt = get_system_prompt_for_sample(sample)
+    # 샘플의 personality system prompt 생성 (해당 trait만 포함)
+    sys_prompt = get_system_prompt_for_sample(sample, traits=traits)
 
     for item_id in item_indices:
         if item_id not in items:
