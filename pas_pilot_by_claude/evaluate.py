@@ -215,8 +215,8 @@ def evaluate_trait(
         sample_desc = get_sample_description(sample)
         trait_level = sample.get_trait_level(trait)
 
-        # 샘플의 personality system prompt 생성 (학습 시와 동일한 포맷)
-        sample_sys_prompt = get_system_prompt_for_sample(sample)
+        # 샘플의 personality system prompt 생성 (해당 trait만 포함, 학습 시와 동일한 포맷)
+        sample_sys_prompt = get_system_prompt_for_sample(sample, traits=[trait])
 
         result = {
             'case': sample.case,
