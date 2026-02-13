@@ -104,7 +104,7 @@ class InteractiveChat:
             interventions = self.interventions[trait]
             self.steering.apply_steering(interventions, alpha=alpha)
 
-    def generate_response(self, user_input: str, max_new_tokens: int = 100) -> str:
+    def generate_response(self, user_input: str, max_new_tokens: int = 512) -> str:
         """현재 steering 설정으로 응답 생성"""
         # Steering 적용
         self.apply_current_steering()

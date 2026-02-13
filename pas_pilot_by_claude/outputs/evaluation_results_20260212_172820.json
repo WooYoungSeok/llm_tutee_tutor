@@ -3,7 +3,7 @@
     "trait": "se",
     "trait_name": "Self-Efficacy",
     "alpha": 1.0,
-    "base_overall_accuracy": 0.5,
+    "base_overall_accuracy": 0.35714285714285715,
     "sample_results": [
       {
         "case": "synthetic_pattern_1",
@@ -12,8 +12,8 @@
         "base_accuracy": 0.5714285714285714,
         "base_correct": 4,
         "base_total": 7,
-        "steered_accuracy": 0.5714285714285714,
-        "steered_correct": 4
+        "steered_accuracy": 1.0,
+        "steered_correct": 7
       },
       {
         "case": "synthetic_pattern_2",
@@ -22,8 +22,8 @@
         "base_accuracy": 0.5714285714285714,
         "base_correct": 4,
         "base_total": 7,
-        "steered_accuracy": 0.5714285714285714,
-        "steered_correct": 4
+        "steered_accuracy": 1.0,
+        "steered_correct": 7
       },
       {
         "case": "synthetic_pattern_3",
@@ -32,8 +32,8 @@
         "base_accuracy": 0.5714285714285714,
         "base_correct": 4,
         "base_total": 7,
-        "steered_accuracy": 0.5714285714285714,
-        "steered_correct": 4
+        "steered_accuracy": 1.0,
+        "steered_correct": 7
       },
       {
         "case": "synthetic_pattern_4",
@@ -42,52 +42,52 @@
         "base_accuracy": 0.5714285714285714,
         "base_correct": 4,
         "base_total": 7,
-        "steered_accuracy": 0.5714285714285714,
-        "steered_correct": 4
+        "steered_accuracy": 1.0,
+        "steered_correct": 7
       },
       {
         "case": "synthetic_pattern_5",
         "description": "SE:low, IM:high, AS:high",
         "se_level": "low",
-        "base_accuracy": 0.42857142857142855,
-        "base_correct": 3,
+        "base_accuracy": 0.14285714285714285,
+        "base_correct": 1,
         "base_total": 7,
-        "steered_accuracy": 0.42857142857142855,
-        "steered_correct": 3
+        "steered_accuracy": 0.0,
+        "steered_correct": 0
       },
       {
         "case": "synthetic_pattern_6",
         "description": "SE:low, IM:high, AS:low",
         "se_level": "low",
-        "base_accuracy": 0.42857142857142855,
-        "base_correct": 3,
+        "base_accuracy": 0.14285714285714285,
+        "base_correct": 1,
         "base_total": 7,
-        "steered_accuracy": 0.42857142857142855,
-        "steered_correct": 3
+        "steered_accuracy": 0.0,
+        "steered_correct": 0
       },
       {
         "case": "synthetic_pattern_7",
         "description": "SE:low, IM:low, AS:high",
         "se_level": "low",
-        "base_accuracy": 0.42857142857142855,
-        "base_correct": 3,
+        "base_accuracy": 0.14285714285714285,
+        "base_correct": 1,
         "base_total": 7,
-        "steered_accuracy": 0.42857142857142855,
-        "steered_correct": 3
+        "steered_accuracy": 0.0,
+        "steered_correct": 0
       },
       {
         "case": "synthetic_pattern_8",
         "description": "SE:low, IM:low, AS:low",
         "se_level": "low",
-        "base_accuracy": 0.42857142857142855,
-        "base_correct": 3,
+        "base_accuracy": 0.14285714285714285,
+        "base_correct": 1,
         "base_total": 7,
-        "steered_accuracy": 0.42857142857142855,
-        "steered_correct": 3
+        "steered_accuracy": 0.0,
+        "steered_correct": 0
       }
     ],
     "steered_overall_accuracy": 0.5,
-    "improvement": 0.0
+    "improvement": 0.14285714285714285
   },
   "im": {
     "trait": "im",
@@ -99,81 +99,81 @@
         "case": "synthetic_pattern_1",
         "description": "SE:high, IM:high, AS:high",
         "im_level": "high",
-        "base_accuracy": 0.2857142857142857,
-        "base_correct": 2,
+        "base_accuracy": 0.7142857142857143,
+        "base_correct": 5,
         "base_total": 7,
-        "steered_accuracy": 0.2857142857142857,
-        "steered_correct": 2
+        "steered_accuracy": 1.0,
+        "steered_correct": 7
       },
       {
         "case": "synthetic_pattern_2",
         "description": "SE:high, IM:high, AS:low",
         "im_level": "high",
-        "base_accuracy": 0.2857142857142857,
-        "base_correct": 2,
+        "base_accuracy": 0.7142857142857143,
+        "base_correct": 5,
         "base_total": 7,
-        "steered_accuracy": 0.2857142857142857,
-        "steered_correct": 2
+        "steered_accuracy": 1.0,
+        "steered_correct": 7
       },
       {
         "case": "synthetic_pattern_3",
         "description": "SE:high, IM:low, AS:high",
         "im_level": "low",
-        "base_accuracy": 0.7142857142857143,
-        "base_correct": 5,
+        "base_accuracy": 0.2857142857142857,
+        "base_correct": 2,
         "base_total": 7,
-        "steered_accuracy": 0.7142857142857143,
-        "steered_correct": 5
+        "steered_accuracy": 0.0,
+        "steered_correct": 0
       },
       {
         "case": "synthetic_pattern_4",
         "description": "SE:high, IM:low, AS:low",
         "im_level": "low",
-        "base_accuracy": 0.7142857142857143,
-        "base_correct": 5,
+        "base_accuracy": 0.2857142857142857,
+        "base_correct": 2,
         "base_total": 7,
-        "steered_accuracy": 0.7142857142857143,
-        "steered_correct": 5
+        "steered_accuracy": 0.0,
+        "steered_correct": 0
       },
       {
         "case": "synthetic_pattern_5",
         "description": "SE:low, IM:high, AS:high",
         "im_level": "high",
-        "base_accuracy": 0.2857142857142857,
-        "base_correct": 2,
+        "base_accuracy": 0.7142857142857143,
+        "base_correct": 5,
         "base_total": 7,
-        "steered_accuracy": 0.2857142857142857,
-        "steered_correct": 2
+        "steered_accuracy": 1.0,
+        "steered_correct": 7
       },
       {
         "case": "synthetic_pattern_6",
         "description": "SE:low, IM:high, AS:low",
         "im_level": "high",
-        "base_accuracy": 0.2857142857142857,
-        "base_correct": 2,
+        "base_accuracy": 0.7142857142857143,
+        "base_correct": 5,
         "base_total": 7,
-        "steered_accuracy": 0.2857142857142857,
-        "steered_correct": 2
+        "steered_accuracy": 1.0,
+        "steered_correct": 7
       },
       {
         "case": "synthetic_pattern_7",
         "description": "SE:low, IM:low, AS:high",
         "im_level": "low",
-        "base_accuracy": 0.7142857142857143,
-        "base_correct": 5,
+        "base_accuracy": 0.2857142857142857,
+        "base_correct": 2,
         "base_total": 7,
-        "steered_accuracy": 0.7142857142857143,
-        "steered_correct": 5
+        "steered_accuracy": 0.0,
+        "steered_correct": 0
       },
       {
         "case": "synthetic_pattern_8",
         "description": "SE:low, IM:low, AS:low",
         "im_level": "low",
-        "base_accuracy": 0.7142857142857143,
-        "base_correct": 5,
+        "base_accuracy": 0.2857142857142857,
+        "base_correct": 2,
         "base_total": 7,
-        "steered_accuracy": 0.7142857142857143,
-        "steered_correct": 5
+        "steered_accuracy": 0.0,
+        "steered_correct": 0
       }
     ],
     "steered_overall_accuracy": 0.5,
@@ -189,81 +189,81 @@
         "case": "synthetic_pattern_1",
         "description": "SE:high, IM:high, AS:high",
         "as_level": "high",
-        "base_accuracy": 0.0,
-        "base_correct": 0,
+        "base_accuracy": 0.2857142857142857,
+        "base_correct": 2,
         "base_total": 7,
-        "steered_accuracy": 0.0,
-        "steered_correct": 0
+        "steered_accuracy": 0.5714285714285714,
+        "steered_correct": 4
       },
       {
         "case": "synthetic_pattern_2",
         "description": "SE:high, IM:high, AS:low",
         "as_level": "low",
-        "base_accuracy": 1.0,
-        "base_correct": 7,
+        "base_accuracy": 0.7142857142857143,
+        "base_correct": 5,
         "base_total": 7,
-        "steered_accuracy": 1.0,
-        "steered_correct": 7
+        "steered_accuracy": 0.42857142857142855,
+        "steered_correct": 3
       },
       {
         "case": "synthetic_pattern_3",
         "description": "SE:high, IM:low, AS:high",
         "as_level": "high",
-        "base_accuracy": 0.0,
-        "base_correct": 0,
+        "base_accuracy": 0.2857142857142857,
+        "base_correct": 2,
         "base_total": 7,
-        "steered_accuracy": 0.0,
-        "steered_correct": 0
+        "steered_accuracy": 0.5714285714285714,
+        "steered_correct": 4
       },
       {
         "case": "synthetic_pattern_4",
         "description": "SE:high, IM:low, AS:low",
         "as_level": "low",
-        "base_accuracy": 1.0,
-        "base_correct": 7,
+        "base_accuracy": 0.7142857142857143,
+        "base_correct": 5,
         "base_total": 7,
-        "steered_accuracy": 1.0,
-        "steered_correct": 7
+        "steered_accuracy": 0.42857142857142855,
+        "steered_correct": 3
       },
       {
         "case": "synthetic_pattern_5",
         "description": "SE:low, IM:high, AS:high",
         "as_level": "high",
-        "base_accuracy": 0.0,
-        "base_correct": 0,
+        "base_accuracy": 0.2857142857142857,
+        "base_correct": 2,
         "base_total": 7,
-        "steered_accuracy": 0.0,
-        "steered_correct": 0
+        "steered_accuracy": 0.5714285714285714,
+        "steered_correct": 4
       },
       {
         "case": "synthetic_pattern_6",
         "description": "SE:low, IM:high, AS:low",
         "as_level": "low",
-        "base_accuracy": 1.0,
-        "base_correct": 7,
+        "base_accuracy": 0.7142857142857143,
+        "base_correct": 5,
         "base_total": 7,
-        "steered_accuracy": 1.0,
-        "steered_correct": 7
+        "steered_accuracy": 0.42857142857142855,
+        "steered_correct": 3
       },
       {
         "case": "synthetic_pattern_7",
         "description": "SE:low, IM:low, AS:high",
         "as_level": "high",
-        "base_accuracy": 0.0,
-        "base_correct": 0,
+        "base_accuracy": 0.2857142857142857,
+        "base_correct": 2,
         "base_total": 7,
-        "steered_accuracy": 0.0,
-        "steered_correct": 0
+        "steered_accuracy": 0.5714285714285714,
+        "steered_correct": 4
       },
       {
         "case": "synthetic_pattern_8",
         "description": "SE:low, IM:low, AS:low",
         "as_level": "low",
-        "base_accuracy": 1.0,
-        "base_correct": 7,
+        "base_accuracy": 0.7142857142857143,
+        "base_correct": 5,
         "base_total": 7,
-        "steered_accuracy": 1.0,
-        "steered_correct": 7
+        "steered_accuracy": 0.42857142857142855,
+        "steered_correct": 3
       }
     ],
     "steered_overall_accuracy": 0.5,
