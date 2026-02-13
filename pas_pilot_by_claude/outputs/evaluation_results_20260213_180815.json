@@ -3,17 +3,17 @@
     "trait": "as",
     "trait_name": "Academic Stress",
     "alpha": 1.0,
-    "base_overall_accuracy": 0.2857142857142857,
+    "base_overall_accuracy": 0.7142857142857143,
     "sample_results": [
       {
         "case": "synthetic_pattern_1",
         "description": "SE:high, IM:high, AS:high",
         "as_level": "high",
-        "base_accuracy": 0.14285714285714285,
-        "base_correct": 1,
+        "base_accuracy": 0.5714285714285714,
+        "base_correct": 4,
         "base_total": 7,
-        "steered_accuracy": 0.42857142857142855,
-        "steered_correct": 3
+        "steered_accuracy": 0.5714285714285714,
+        "steered_correct": 4
       },
       {
         "case": "synthetic_pattern_2",
@@ -29,18 +29,18 @@
         "case": "synthetic_pattern_3",
         "description": "SE:high, IM:low, AS:high",
         "as_level": "high",
-        "base_accuracy": 0.0,
-        "base_correct": 0,
+        "base_accuracy": 0.5714285714285714,
+        "base_correct": 4,
         "base_total": 7,
-        "steered_accuracy": 0.42857142857142855,
-        "steered_correct": 3
+        "steered_accuracy": 0.5714285714285714,
+        "steered_correct": 4
       },
       {
         "case": "synthetic_pattern_4",
         "description": "SE:high, IM:low, AS:low",
         "as_level": "low",
-        "base_accuracy": 0.5714285714285714,
-        "base_correct": 4,
+        "base_accuracy": 0.8571428571428571,
+        "base_correct": 6,
         "base_total": 7,
         "steered_accuracy": 0.8571428571428571,
         "steered_correct": 6
@@ -52,41 +52,41 @@
         "base_accuracy": 0.5714285714285714,
         "base_correct": 4,
         "base_total": 7,
-        "steered_accuracy": 0.7142857142857143,
-        "steered_correct": 5
+        "steered_accuracy": 0.5714285714285714,
+        "steered_correct": 4
       },
       {
         "case": "synthetic_pattern_6",
         "description": "SE:low, IM:high, AS:low",
         "as_level": "low",
-        "base_accuracy": 0.0,
-        "base_correct": 0,
+        "base_accuracy": 0.8571428571428571,
+        "base_correct": 6,
         "base_total": 7,
-        "steered_accuracy": 0.14285714285714285,
-        "steered_correct": 1
+        "steered_accuracy": 0.8571428571428571,
+        "steered_correct": 6
       },
       {
         "case": "synthetic_pattern_7",
         "description": "SE:low, IM:low, AS:high",
         "as_level": "high",
-        "base_accuracy": 0.14285714285714285,
-        "base_correct": 1,
+        "base_accuracy": 0.5714285714285714,
+        "base_correct": 4,
         "base_total": 7,
-        "steered_accuracy": 0.7142857142857143,
-        "steered_correct": 5
+        "steered_accuracy": 0.5714285714285714,
+        "steered_correct": 4
       },
       {
         "case": "synthetic_pattern_8",
         "description": "SE:low, IM:low, AS:low",
         "as_level": "low",
-        "base_accuracy": 0.0,
-        "base_correct": 0,
+        "base_accuracy": 0.8571428571428571,
+        "base_correct": 6,
         "base_total": 7,
-        "steered_accuracy": 0.14285714285714285,
-        "steered_correct": 1
+        "steered_accuracy": 0.8571428571428571,
+        "steered_correct": 6
       }
     ],
-    "steered_overall_accuracy": 0.5357142857142857,
-    "improvement": 0.25
+    "steered_overall_accuracy": 0.7142857142857143,
+    "improvement": 0.0
   }
 }

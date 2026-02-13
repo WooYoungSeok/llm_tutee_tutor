@@ -9,8 +9,8 @@
         "case": "synthetic_pattern_1",
         "description": "SE:high, IM:high, AS:high",
         "se_level": "high",
-        "base_accuracy": 0.0,
-        "base_correct": 0,
+        "base_accuracy": 0.14285714285714285,
+        "base_correct": 1,
         "base_total": 7,
         "steered_accuracy": 0.0,
         "steered_correct": 0
@@ -19,8 +19,8 @@
         "case": "synthetic_pattern_2",
         "description": "SE:high, IM:high, AS:low",
         "se_level": "high",
-        "base_accuracy": 0.0,
-        "base_correct": 0,
+        "base_accuracy": 0.14285714285714285,
+        "base_correct": 1,
         "base_total": 7,
         "steered_accuracy": 0.0,
         "steered_correct": 0
@@ -32,8 +32,8 @@
         "base_accuracy": 0.14285714285714285,
         "base_correct": 1,
         "base_total": 7,
-        "steered_accuracy": 0.14285714285714285,
-        "steered_correct": 1
+        "steered_accuracy": 0.0,
+        "steered_correct": 0
       },
       {
         "case": "synthetic_pattern_4",
@@ -42,8 +42,8 @@
         "base_accuracy": 0.14285714285714285,
         "base_correct": 1,
         "base_total": 7,
-        "steered_accuracy": 0.14285714285714285,
-        "steered_correct": 1
+        "steered_accuracy": 0.0,
+        "steered_correct": 0
       },
       {
         "case": "synthetic_pattern_5",
@@ -52,18 +52,18 @@
         "base_accuracy": 0.0,
         "base_correct": 0,
         "base_total": 7,
-        "steered_accuracy": 0.0,
-        "steered_correct": 0
+        "steered_accuracy": 0.14285714285714285,
+        "steered_correct": 1
       },
       {
         "case": "synthetic_pattern_6",
         "description": "SE:low, IM:high, AS:low",
         "se_level": "low",
-        "base_accuracy": 0.14285714285714285,
-        "base_correct": 1,
+        "base_accuracy": 0.0,
+        "base_correct": 0,
         "base_total": 7,
-        "steered_accuracy": 0.5714285714285714,
-        "steered_correct": 4
+        "steered_accuracy": 0.14285714285714285,
+        "steered_correct": 1
       },
       {
         "case": "synthetic_pattern_7",
@@ -72,21 +72,21 @@
         "base_accuracy": 0.0,
         "base_correct": 0,
         "base_total": 7,
-        "steered_accuracy": 0.0,
-        "steered_correct": 0
+        "steered_accuracy": 0.14285714285714285,
+        "steered_correct": 1
       },
       {
         "case": "synthetic_pattern_8",
         "description": "SE:low, IM:low, AS:low",
         "se_level": "low",
-        "base_accuracy": 0.14285714285714285,
-        "base_correct": 1,
+        "base_accuracy": 0.0,
+        "base_correct": 0,
         "base_total": 7,
-        "steered_accuracy": 0.5714285714285714,
-        "steered_correct": 4
+        "steered_accuracy": 0.14285714285714285,
+        "steered_correct": 1
       }
     ],
-    "steered_overall_accuracy": 0.17857142857142858,
-    "improvement": 0.10714285714285715
+    "steered_overall_accuracy": 0.07142857142857142,
+    "improvement": 0.0
   }
 }
