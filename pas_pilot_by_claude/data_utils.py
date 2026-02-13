@@ -14,7 +14,8 @@ from dataclasses import dataclass
 from config import (
     TEST_SET_FILE, ITEM_KEY_FILE, TRAIN_TEST_SPLIT_FILE,
     TRAITS, TRAIT_NAMES, PATTERN_LABELS, GROUP_TO_TRAIT,
-    PROMPT_TEMPLATE_AGREE, PROMPT_TEMPLATE_DISAGREE
+    PROMPT_TEMPLATE_AGREE, PROMPT_TEMPLATE_DISAGREE,
+    PERSONA_PROMPTS, get_persona_prompt, get_combined_persona_prompt
 )
 
 
@@ -195,17 +196,11 @@ def create_activation_samples(
         prompt_agree = PROMPT_TEMPLATE_AGREE.format(statement=statement.text)
         prompt_disagree = PROMPT_TEMPLATE_DISAGREE.format(statement=statement.text)
 
-        # Label 결정
-        # response=2 (Accurate)이고 key=+1이면: 높은 trait -> Agree가 positive (label=1)
-        # response=2 (Accurate)이고 key=-1이면: 낮은 trait -> Disagree가 positive (label=0)
-        # response=1 (Inaccurate)이고 key=+1이면: 낮은 trait -> Disagree가 positive (label=0)
-        # response=1 (Inaccurate)이고 key=-1이면: 높은 trait -> Agree가 positive (label=1)
-
-        is_accurate = (response == 2)
-        is_positive_keyed = (statement.key == 1)
-
-        # XOR 로직
-        label = 1 if (is_accurate == is_positive_keyed) else 0
+        # Label 결정 (Key 기반 - 모든 sample에서 같은 item은 같은 label)
+        # Positive-keyed item (key=+1): Agree = high trait → label=1
+        # Negative-keyed item (key=-1): Disagree = high trait → label=0
+        # 이렇게 하면 probe가 일관된 "high trait" direction을 학습
+        label = 1 if statement.key == 1 else 0
 
         activation_samples.append(ActivationSample(
             statement=statement,
@@ -270,6 +265,63 @@ def format_evaluation_prompt(statement_text: str) -> str:
     """
     return f"""Question: Given a statement of you: "{statement_text}", Do you agree?
 Answer:"""
+
+
+def format_chat_template(
+    tokenizer,
+    user_prompt: str,
+    model_name: str,
+    system_prompt: str = "You are a helpful assistant.",
+    add_generation_prompt: bool = False
+) -> torch.Tensor:
+    """
+    모델에 맞는 chat template으로 토큰화
+
+    Args:
+        tokenizer: HuggingFace tokenizer
+        user_prompt: 사용자 프롬프트
+        model_name: 모델 이름
+        system_prompt: 시스템 프롬프트 (persona prompt)
+        add_generation_prompt: 생성용 프롬프트 추가 여부
+
+    Returns:
+        input_ids tensor
+    """
+    import torch
+
+    if 'llama-3' in model_name.lower():
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
+        input_ids = tokenizer.apply_chat_template(
+            messages,
+            return_tensors="pt",
+            add_generation_prompt=add_generation_prompt
+        )
+    else:
+        # Llama-2 형식
+        B_INST, E_INST = "[INST]", "[/INST]"
+        B_SYS, E_SYS = "<<SYS>>\n", "\n<</SYS>>\n\n"
+        formatted = f"{B_INST} {B_SYS}{system_prompt}{E_SYS}{user_prompt} {E_INST}"
+        input_ids = tokenizer(formatted, return_tensors="pt").input_ids
+
+    return input_ids
+
+
+def get_sample_persona_prompt(sample: Sample, trait: str) -> str:
+    """
+    특정 sample의 특정 trait에 대한 persona prompt 반환
+
+    Args:
+        sample: Sample 객체
+        trait: 'se', 'im', 'as'
+
+    Returns:
+        해당 trait level의 persona prompt
+    """
+    level = sample.get_trait_level(trait)
+    return get_persona_prompt(trait, level)
 
 
 if __name__ == "__main__":

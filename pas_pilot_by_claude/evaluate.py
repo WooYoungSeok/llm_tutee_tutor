@@ -26,7 +26,8 @@ from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 from config import (
-    OUTPUT_DIR, TRAITS, TRAIT_NAMES, DEFAULT_MODEL, DEFAULT_ALPHA
+    OUTPUT_DIR, TRAITS, TRAIT_NAMES, DEFAULT_MODEL, DEFAULT_ALPHA,
+    get_persona_prompt
 )
 from data_utils import (
     load_item_keys, load_samples, get_trait_indices,
@@ -72,27 +73,43 @@ def get_model_response(
     model,
     tokenizer,
     prompt: str,
-    model_name: str
+    model_name: str,
+    system_prompt: str = None
 ) -> str:
     """
     모델의 Yes/No 응답 추출
 
+    Args:
+        model: LLaMA 모델
+        tokenizer: 토크나이저
+        prompt: 사용자 프롬프트
+        model_name: 모델 이름
+        system_prompt: 시스템 프롬프트 (persona prompt)
+
     Returns:
         'Yes', 'No', or 'Unknown'
     """
-    device = next(model.parameters()).device
+    # 기본 시스템 프롬프트
+    if system_prompt is None:
+        system_prompt = "You are a helpful assistant."
+
+    # Yes/No 응답 지시 추가
+    full_system_prompt = f"{system_prompt}\n\nAnswer the following question with only 'Yes' or 'No'."
+
+    # Multi-GPU 대응: o_proj.weight.device 사용
+    device = model.model.layers[0].self_attn.o_proj.weight.device
 
     # 프롬프트 포맷팅
     if 'llama-3' in model_name.lower():
         messages = [
-            {"role": "system", "content": "You are a helpful assistant. Answer with only 'Yes' or 'No'."},
+            {"role": "system", "content": full_system_prompt},
             {"role": "user", "content": prompt}
         ]
         input_ids = tokenizer.apply_chat_template(
             messages, return_tensors="pt", add_generation_prompt=True
         )
     else:
-        formatted = f"[INST] <<SYS>>\nAnswer with only 'Yes' or 'No'.\n<</SYS>>\n\n{prompt} [/INST]"
+        formatted = f"[INST] <<SYS>>\n{full_system_prompt}\n<</SYS>>\n\n{prompt} [/INST]"
         input_ids = tokenizer(formatted, return_tensors="pt").input_ids
 
     input_ids = input_ids.to(device)
@@ -127,10 +144,21 @@ def evaluate_sample_accuracy(
     items: dict,
     sample,
     test_indices: list,
-    trait: str
+    trait: str,
+    system_prompt: str = None
 ) -> dict:
     """
     특정 샘플에 대해 test items의 정답률 계산
+
+    Args:
+        model: LLaMA 모델
+        tokenizer: 토크나이저
+        model_name: 모델 이름
+        items: Statement 딕셔너리
+        sample: Sample 객체
+        test_indices: test item indices
+        trait: 평가할 trait
+        system_prompt: 시스템 프롬프트 (persona prompt)
 
     Returns:
         {'correct': int, 'total': int, 'accuracy': float, 'details': [...]}
@@ -152,17 +180,25 @@ def evaluate_sample_accuracy(
         if response == 0:
             continue
 
-        # 기대 응답 계산
-        is_accurate = (response == 2)
+        # 기대 응답 계산 (Key 기반)
+        # Positive-keyed item: sample의 trait level이 high면 Yes, low면 No
+        # Negative-keyed item: sample의 trait level이 high면 No, low면 Yes
+        sample_level = sample.get_trait_level(trait)
+        is_high = (sample_level == 'high')
         is_positive_keyed = (statement.key == 1)
 
-        # label=1이면 Yes가 정답, label=0이면 No가 정답
-        expected_label = 1 if (is_accurate == is_positive_keyed) else 0
-        expected_response = 'Yes' if expected_label == 1 else 'No'
+        # High trait + positive-keyed -> Yes
+        # High trait + negative-keyed -> No
+        # Low trait + positive-keyed -> No
+        # Low trait + negative-keyed -> Yes
+        expected_response = 'Yes' if (is_high == is_positive_keyed) else 'No'
 
-        # 모델 응답 획득
+        # 모델 응답 획득 (persona prompt 사용)
         prompt = format_evaluation_prompt(statement.text)
-        actual_response = get_model_response(model, tokenizer, prompt, model_name)
+        actual_response = get_model_response(
+            model, tokenizer, prompt, model_name,
+            system_prompt=system_prompt
+        )
 
         is_correct = (actual_response == expected_response)
         if is_correct:
@@ -220,31 +256,36 @@ def evaluate_trait(
         sample_desc = get_sample_description(sample)
         trait_level = sample.get_trait_level(trait)
 
+        # 해당 sample의 trait level에 맞는 persona prompt 생성
+        persona_prompt = get_persona_prompt(trait, trait_level)
+
         result = {
             'case': sample.case,
             'description': sample_desc,
             f'{trait}_level': trait_level,
         }
 
-        # Base 모델 평가
+        # Base 모델 평가 (persona prompt 사용)
         if steering:
             steering.reset()
 
         base_result = evaluate_sample_accuracy(
             model, tokenizer, model_name,
-            items, sample, test_indices, trait
+            items, sample, test_indices, trait,
+            system_prompt=persona_prompt
         )
         result['base_accuracy'] = base_result['accuracy']
         result['base_correct'] = base_result['correct']
         result['base_total'] = base_result['total']
 
-        # Steered 모델 평가
+        # Steered 모델 평가 (persona prompt 사용)
         if interventions and steering:
             steering.apply_steering(interventions, alpha=alpha)
 
             steered_result = evaluate_sample_accuracy(
                 model, tokenizer, model_name,
-                items, sample, test_indices, trait
+                items, sample, test_indices, trait,
+                system_prompt=persona_prompt
             )
             result['steered_accuracy'] = steered_result['accuracy']
             result['steered_correct'] = steered_result['correct']
